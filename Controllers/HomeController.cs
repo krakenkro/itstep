@@ -48,6 +48,65 @@ namespace Store.Controllers
 
             return View(information);
         }
+
+        public async Task<IActionResult> ShowUsers(string searched)
+        {
+            return View(await _context.User.ToListAsync());
+        }
+
+        //Edit or Update
+        [HttpPost, ActionName("EditPersonalInformation")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUserInfo(Guid? Id)
+        {
+            if (Id == null)
+            {
+                return NotFound();
+            }
+
+            var users = await _context.User.FirstOrDefaultAsync(s => s.Id == Id);
+
+
+            if (await TryUpdateModelAsync<User>(
+                users, "", s => s.Login, s => s.Password, s => s.ConfirmPassword))
+            {
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException)
+                {
+                    ModelState.AddModelError("", "Unable to save changes. " + "Try again or call system admin");
+                }
+            }
+
+            return View(users);
+        }
+
+        public async Task<IActionResult> DeleteUser(Guid id, bool? Savechangeserror = false)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var person = await _context.User.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+
+            if (person == null)
+            {
+                return NotFound();
+            }
+
+            if (Savechangeserror.GetValueOrDefault())
+            {
+                ViewData["DeleteError"] = "Delete failed, please try again later ... ";
+            }
+
+            return View(person);
+        }
+
+
         public IActionResult Authorization()
         {
             return View();
